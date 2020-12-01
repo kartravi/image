@@ -244,7 +244,8 @@ func Image(ctx context.Context, policyContext *signature.PolicyContext, destRef,
 	if !isTTY(reportWriter) {
 		progressOutput = ioutil.Discard
 	}
-	copyInParallel := dest.HasThreadSafePutBlob() && rawSource.HasThreadSafeGetBlob()
+	//copyInParallel := dest.HasThreadSafePutBlob() && rawSource.HasThreadSafeGetBlob()
+	copyInParallel := false
 
 	c := &copier{
 		dest:             dest,
