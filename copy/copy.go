@@ -791,6 +791,7 @@ func isTTY(w io.Writer) bool {
 func (ic *imageCopier) copyLayers(ctx context.Context) error {
 	srcInfos := ic.src.LayerInfos()
 	numLayers := len(srcInfos)
+	fmt.Println("KR - copyLayers - num layers: ", numLayers)
 	updatedSrcInfos, err := ic.src.LayerInfosForCopy(ctx)
 	if err != nil {
 		return err
@@ -817,6 +818,7 @@ func (ic *imageCopier) copyLayers(ctx context.Context) error {
 	// copySemaphore is used to limit the number of parallel downloads to
 	// avoid malicious images causing troubles and to be nice to servers.
 	var copySemaphore *semaphore.Weighted
+	fmt.Println("KR - copyLayers copyInParallel: ", ic.c.copyInParallel)
 	if ic.c.copyInParallel {
 		copySemaphore = semaphore.NewWeighted(int64(maxParallelDownloads))
 	} else {
@@ -839,10 +841,14 @@ func (ic *imageCopier) copyLayers(ctx context.Context) error {
 				logrus.Debugf("Skipping foreign layer %q copy to %s", cld.destInfo.Digest, ic.c.dest.Reference().Transport().Name())
 			}
 		} else {
+			fmt.Println("KR - copyLayers copying layer")
 			cld.destInfo, cld.diffID, cld.err = ic.copyLayer(ctx, srcLayer, toEncrypt, pool)
+			fmt.Println("KR - copyLayers done copying layer")
 		}
 		data[index] = cld
 	}
+
+	fmt.Println("KR - copyLayers done copying layer")
 
 	// Create layer Encryption map
 	encLayerBitmap := map[int]bool{}
@@ -861,6 +867,8 @@ func (ic *imageCopier) copyLayers(ctx context.Context) error {
 			}
 		}
 	}
+
+	fmt.Println("KR - copyLayers here 1")
 
 	if err := func() error { // A scope for defer
 		progressPool, progressCleanup := ic.c.newProgressPool(ctx)
@@ -885,6 +893,8 @@ func (ic *imageCopier) copyLayers(ctx context.Context) error {
 		return err
 	}
 
+	fmt.Println("KR - copyLayers here 2")
+
 	destInfos := make([]types.BlobInfo, numLayers)
 	diffIDs := make([]digest.Digest, numLayers)
 	for i, cld := range data {
@@ -895,6 +905,8 @@ func (ic *imageCopier) copyLayers(ctx context.Context) error {
 		diffIDs[i] = cld.diffID
 	}
 
+	fmt.Println("KR - copyLayers here 3")
+
 	ic.manifestUpdates.InformationOnly.LayerInfos = destInfos
 	if ic.diffIDsAreNeeded {
 		ic.manifestUpdates.InformationOnly.LayerDiffIDs = diffIDs
@@ -902,6 +914,9 @@ func (ic *imageCopier) copyLayers(ctx context.Context) error {
 	if srcInfosUpdated || layerDigestsDiffer(srcInfos, destInfos) {
 		ic.manifestUpdates.LayerInfos = destInfos
 	}
+
+	fmt.Println("KR - copyLayers here 4")
+
 	return nil
 }
 
