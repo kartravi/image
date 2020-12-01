@@ -586,6 +586,7 @@ func (c *copier) copyOneImage(ctx context.Context, policyContext *signature.Poli
 		sigs = [][]byte{}
 	} else {
 		c.Printf("Getting image source signatures\n")
+		c.Printf("src: ", src)
 		s, err := src.Signatures(ctx)
 		c.Printf("Getting image source signatures - Done\n")
 		if err != nil {
