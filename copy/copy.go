@@ -587,11 +587,13 @@ func (c *copier) copyOneImage(ctx context.Context, policyContext *signature.Poli
 	} else {
 		c.Printf("Getting image source signatures\n")
 		s, err := src.Signatures(ctx)
+		c.Printf("Getting image source signatures - Done\n")
 		if err != nil {
 			return nil, "", "", errors.Wrap(err, "Error reading signatures")
 		}
 		sigs = s
 	}
+	c.Printf("KR - here 1\n")
 	if len(sigs) != 0 {
 		c.Printf("Checking if image destination supports signatures\n")
 		if err := c.dest.SupportsSignatures(ctx); err != nil {
@@ -621,6 +623,8 @@ func (c *copier) copyOneImage(ctx context.Context, policyContext *signature.Poli
 
 	destRequiresOciEncryption := (isEncrypted(src) && ic.c.ociDecryptConfig != nil) || options.OciEncryptLayers != nil
 
+	c.Printf("KR - here 2\n")
+
 	// We compute preferredManifestMIMEType only to show it in error messages.
 	// Without having to add this context in an error message, we would be happy enough to know only that no conversion is needed.
 	preferredManifestMIMEType, otherManifestMIMETypeCandidates, err := ic.determineManifestConversion(ctx, c.dest.SupportedManifestMIMETypes(), options.ForceManifestMIMEType, destRequiresOciEncryption)
@@ -628,14 +632,20 @@ func (c *copier) copyOneImage(ctx context.Context, policyContext *signature.Poli
 		return nil, "", "", err
 	}
 
+	c.Printf("KR - here 3\n")
+
 	// If src.UpdatedImageNeedsLayerDiffIDs(ic.manifestUpdates) will be true, it needs to be true by the time we get here.
 	ic.diffIDsAreNeeded = src.UpdatedImageNeedsLayerDiffIDs(*ic.manifestUpdates)
 	// If encrypted and decryption keys provided, we should try to decrypt
 	ic.diffIDsAreNeeded = ic.diffIDsAreNeeded || (isEncrypted(src) && ic.c.ociDecryptConfig != nil) || ic.c.ociEncryptConfig != nil
 
+	c.Printf("KR - here 4\n")
+
 	if err := ic.copyLayers(ctx); err != nil {
 		return nil, "", "", err
 	}
+
+	c.Printf("KR - here 5\n")
 
 	// With docker/distribution registries we do not know whether the registry accepts schema2 or schema1 only;
 	// and at least with the OpenShift registry "acceptschema2" option, there is no way to detect the support
@@ -644,6 +654,8 @@ func (c *copier) copyOneImage(ctx context.Context, policyContext *signature.Poli
 	manifestBytes, retManifestDigest, err := ic.copyUpdatedConfigAndManifest(ctx, targetInstance)
 	retManifestType = preferredManifestMIMEType
 	if err != nil {
+		c.Printf("KR - here 6\n")
+
 		logrus.Debugf("Writing manifest using preferred type %s failed: %v", preferredManifestMIMEType, err)
 		// … if it fails, _and_ the failure is because the manifest is rejected, we may have other options.
 		if _, isManifestRejected := errors.Cause(err).(types.ManifestTypeRejectedError); !isManifestRejected || len(otherManifestMIMETypeCandidates) == 0 {
@@ -659,6 +671,8 @@ func (c *copier) copyOneImage(ctx context.Context, policyContext *signature.Poli
 		if !ic.canModifyManifest {
 			return nil, "", "", errors.Wrap(err, "Writing manifest failed (and converting it is not possible, image is signed or the destination specifies a digest)")
 		}
+
+		c.Printf("KR - here 7\n")
 
 		// errs is a list of errors when trying various manifest types. Also serves as an "upload succeeded" flag when set to nil.
 		errs := []string{fmt.Sprintf("%s(%v)", preferredManifestMIMEType, err)}
@@ -679,6 +693,8 @@ func (c *copier) copyOneImage(ctx context.Context, policyContext *signature.Poli
 			errs = nil // Mark this as a success so that we don't abort below.
 			break
 		}
+		c.Printf("KR - here 8\n")
+
 		if errs != nil {
 			return nil, "", "", fmt.Errorf("Uploading manifest failed, attempted the following formats: %s", strings.Join(errs, ", "))
 		}
