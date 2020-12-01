@@ -145,14 +145,14 @@ func (d *dockerImageDestination) PutBlob(ctx context.Context, stream io.Reader, 
 
 	// FIXME? Chunked upload, progress reporting, etc.
 	uploadPath := fmt.Sprintf(blobUploadPath, reference.Path(d.ref.ref))
-	logrus.Debugf("Uploading %s", uploadPath)
+	fmt.Printf("Uploading %s", uploadPath)
 	res, err := d.c.makeRequest(ctx, "POST", uploadPath, nil, nil, v2Auth, nil)
 	if err != nil {
 		return types.BlobInfo{}, err
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusAccepted {
-		logrus.Debugf("Error initiating layer upload, response %#v", *res)
+		fmt.Printf("Error initiating layer upload, response %#v", *res)
 		return types.BlobInfo{}, errors.Wrapf(registryHTTPResponseToError(res), "Error initiating layer upload to %s in %s", uploadPath, d.c.registry)
 	}
 	uploadLocation, err := res.Location()
@@ -169,7 +169,7 @@ func (d *dockerImageDestination) PutBlob(ctx context.Context, stream io.Reader, 
 		defer uploadReader.Terminate(errors.New("Reading data from an already terminated upload"))
 		res, err = d.c.makeRequestToResolvedURL(ctx, "PATCH", uploadLocation.String(), map[string][]string{"Content-Type": {"application/octet-stream"}}, uploadReader, inputInfo.Size, v2Auth, nil)
 		if err != nil {
-			logrus.Debugf("Error uploading layer chunked %v", err)
+			fmt.Printf("Error uploading layer chunked %v", err)
 			return nil, err
 		}
 		defer res.Body.Close()
@@ -199,11 +199,11 @@ func (d *dockerImageDestination) PutBlob(ctx context.Context, stream io.Reader, 
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusCreated {
-		logrus.Debugf("Error uploading layer, response %#v", *res)
+		fmt.Printf("Error uploading layer, response %#v", *res)
 		return types.BlobInfo{}, errors.Wrapf(registryHTTPResponseToError(res), "Error uploading layer to %s", uploadLocation)
 	}
 
-	logrus.Debugf("Upload of layer %s complete", computedDigest)
+	fmt.Printf("Upload of layer %s complete", computedDigest)
 	cache.RecordKnownLocation(d.ref.Transport(), bicTransportScope(d.ref), computedDigest, newBICLocationReference(d.ref))
 	return types.BlobInfo{Digest: computedDigest, Size: sizeCounter.size}, nil
 }
