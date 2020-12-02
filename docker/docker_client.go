@@ -733,6 +733,8 @@ func (c *dockerClient) detectPropertiesHelper(ctx context.Context) error {
 			return err
 		}
 		defer resp.Body.Close()
+		fmt.Println("KR - Ping status ", url, resp.StatusCode)
+
 		logrus.Debugf("Ping %s status %d", url, resp.StatusCode)
 		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusUnauthorized {
 			return httpResponseToError(resp, "")
@@ -742,10 +744,15 @@ func (c *dockerClient) detectPropertiesHelper(ctx context.Context) error {
 		c.supportsSignatures = resp.Header.Get("X-Registry-Supports-Signatures") == "1"
 		return nil
 	}
+
 	err := ping("https")
+	fmt.Println("KR - Ping https status ", err)
+
 	if err != nil && c.tlsClientConfig.InsecureSkipVerify {
 		err = ping("http")
 	}
+	fmt.Println("KR - Ping http status ", err)
+
 	if err != nil {
 		err = errors.Wrapf(err, "error pinging docker registry %s", c.registry)
 		if c.sys != nil && c.sys.DockerDisableV1Ping {
