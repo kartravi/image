@@ -745,13 +745,16 @@ func (c *dockerClient) detectPropertiesHelper(ctx context.Context) error {
 		return nil
 	}
 
-	err := ping("https")
-	fmt.Println("KR - Ping https status ", err)
-
-	if err != nil && c.tlsClientConfig.InsecureSkipVerify {
+	var err error
+	if c.tlsClientConfig.InsecureSkipVerify {
 		err = ping("http")
+		fmt.Println("KR - Ping http status ", err)
+
 	}
-	fmt.Println("KR - Ping http status ", err)
+	if err != nil {
+		err = ping("https")
+		fmt.Println("KR - Ping https status ", err)
+	}
 
 	if err != nil {
 		err = errors.Wrapf(err, "error pinging docker registry %s", c.registry)
